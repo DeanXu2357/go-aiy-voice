@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/stianeikeland/go-rpio/v4"
 )
 
@@ -12,7 +15,7 @@ func main() {
 }
 
 func shinePin25() {
-	pin = rpio.Pin(10)
+	pin := rpio.Pin(10)
 	// Open and map memory to access gpio, check for errors
 	if err := rpio.Open(); err != nil {
 		fmt.Println(err)
