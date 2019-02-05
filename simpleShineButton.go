@@ -8,8 +8,8 @@ import (
 	"github.com/stianeikeland/go-rpio/v4"
 )
 
-func shinePin25() {
-	pin := rpio.Pin(10)
+func ShinePin25() {
+	pin := rpio.Pin(25)
 	// Open and map memory to access gpio, check for errors
 	if err := rpio.Open(); err != nil {
 		fmt.Println(err)

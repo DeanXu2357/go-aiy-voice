@@ -21,15 +21,13 @@ func main() {
 	// Unmap gpio memory when done
 	defer rpio.Close()
 
-	pin.Input()
-
-	var res rpio.State
-
 	for exec {
-		res = pin.Read()
+		pin.PullUp()
+		fmt.Printf("PullUp: %d\n", pin.Read())
+		ShinePin25()
 
-		if res == rpio.High {
-			shinePin25()
-		}
+		// Pull down and read value
+		pin.PullDown()
+		fmt.Printf("PullDown: %d\n", pin.Read())
 	}
 }

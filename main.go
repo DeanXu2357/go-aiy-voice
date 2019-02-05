@@ -7,5 +7,5 @@ import (
 func main() {
 	fmt.Println("Test Start")
 
-	shinePin25()
+	ShinePin25()
 }
