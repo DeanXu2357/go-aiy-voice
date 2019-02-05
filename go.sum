@@ -1,0 +1,6 @@
+github.com/ramya-rao-a/go-outline v0.0.0-20181122025142-7182a932836a h1:rJS9v8WlLfIQ/22PlTXc47p5jB8RaY9XnTkX8Uols7w=
+github.com/ramya-rao-a/go-outline v0.0.0-20181122025142-7182a932836a/go.mod h1:1WL5IqM+CnRCAbXetRnL1YVoS9KtU2zMhOi/5oAVPo4=
+github.com/stianeikeland/go-rpio/v4 v4.4.0 h1:LScvNyXHF412co42LG5t7bvBDbtDAhLF828ebaGqmjA=
+github.com/stianeikeland/go-rpio/v4 v4.4.0/go.mod h1:BkK52zk+FRk8wCTDf88/86Sojc+NfUiCAHd1ZV3RuTM=
+golang.org/x/tools v0.0.0-20190204220159-b2f7fe607dec h1:KAJB9FEpiDFqctKRArsbXAK+584CunZ1KZWGpoHopcA=
+golang.org/x/tools v0.0.0-20190204220159-b2f7fe607dec/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
