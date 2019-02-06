@@ -37,11 +37,11 @@ func NewButton(pin uint8, debounceTime float64, whenPressed func(), whenReleased
 
 	bCh := make(chan buttonCh)
 	button = Button{
-		pin: pin,
+		pin:          pin,
 		debounceTime: debounceTime,
-		channel: bCh,
-		whenPressed: whenPressed,
-		whenReleased: whenReleased
+		channel:      bCh,
+		whenPressed:  whenPressed,
+		whenReleased: whenReleased,
 	}
 
 	go buttonRun(button.channel, button)
@@ -68,17 +68,17 @@ func buttonRun(bCh chan buttonCh, button Button) {
 		}
 
 		if time.Since(whenPress).Seconds() > button.debounceTime {
-			if rpio.Read() == rpio.Low {
+			if pin.Read() == rpio.Low {
 				if !pressed {
 					pressed = true
 					whenPress = time.Now()
-					channel <- buttonCh{status: Pressed}
+					bCh <- buttonCh{status: Pressed}
 				}
 			} else {
 				if pressed {
 					pressed = false
 					whenPress = time.Now()
-					channel <- buttonCh{status: Released}
+					bCh <- buttonCh{status: Released}
 				}
 			}
 		}
@@ -95,10 +95,30 @@ func doWhenPressed(btn Button) {
 		}
 		defer close(btn.channel)
 
-		btn.whenPressed
+		if ch := btn.channel; ch.status == Pressed {
+			whp := btn.whenPressed
+			whp()
+		}
 	}
 
 	close(btn.channel)
+}
+
+func doWhenReleased(btn Button) {
+	for true {
+		if x := <-btn.channel; x.done == true {
+			break
+		}
+		defer close(btn.channel)
+
+		if ch := btn.channel; ch.status == Released {
+			whr := btn.whenReleased
+			whr()
+		}
+	}
+
+	close(btn.channel)
+
 }
 
 func (button *Button) Close() {
