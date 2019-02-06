@@ -7,7 +7,7 @@ import (
 	"github.com/stianeikeland/go-rpio/v4"
 )
 
-func main() {
+func recorder() {
 	exec := true
 
 	pin := rpio.Pin(23)
