@@ -22,8 +22,8 @@ type buttonCh struct {
 }
 
 const (
-	Pressed uint8 = iota
-	Released
+	Released uint8 = iota
+	Pressed
 )
 
 func NewButton(pin uint8, debounceTime float64, whenPressed func(), whenReleased func()) (button Button, err error) {
@@ -95,7 +95,7 @@ func doWhenPressed(btn Button) {
 		}
 		defer close(btn.channel)
 
-		if ch := btn.channel; ch.status == Pressed {
+		if ch := <-btn.channel; ch.status == Pressed {
 			whp := btn.whenPressed
 			whp()
 		}
@@ -111,7 +111,7 @@ func doWhenReleased(btn Button) {
 		}
 		defer close(btn.channel)
 
-		if ch := btn.channel; ch.status == Released {
+		if ch := <-btn.channel; ch.status == Released {
 			whr := btn.whenReleased
 			whr()
 		}
