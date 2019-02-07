@@ -143,21 +143,20 @@ func (btn *Button) SetWhenReleased(f func()) {
 
 func (btn *Button) WaitForPressed() {
 	for {
-		if x <- btn.channel; x.status == Pressed {
+		if x := <-btn.channel; x.status == Pressed {
 			break
 		}
 
-		time.Sleep(0.5 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
 
 func (btn *Button) WaitForReleased() {
 	for {
-		if x <- btn.channel; x.status == Released {
+		if x := <-btn.channel; x.status == Released {
 			break
 		}
 
-		time.Sleep(0.5 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
-
 }
