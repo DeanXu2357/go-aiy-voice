@@ -10,7 +10,14 @@ func main() {
 	fmt.Println("Test Start")
 
 	// ShinePin25()
-	board.NewButton(23, 0.25, func() {
+	btn := board.NewButton(23, 0.25, func() {
 		fmt.Println("pressed\n")
-	})
+	}, func() {})
+
+	for {
+		btn.WaitForPressed()
+		fmt.Println("test pressed")
+		btn.WaitForReleased()
+		fmt.Println("test released")
+	}
 }
