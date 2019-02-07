@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"go-aiy-voice/aiy/board"
+	"go-aiy-voice/aiy/voice"
 )
 
 func main() {
@@ -13,7 +14,9 @@ func main() {
 	// ShinePin25()
 	btn, err := board.NewButton(23, 0.25, func() {
 		fmt.Println("starter set pressed event\n")
-	}, func() {})
+	}, func() {
+		voice.Aplay("~/test6.wav", "default")
+	})
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
