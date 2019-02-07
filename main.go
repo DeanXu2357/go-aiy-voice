@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/DeanXu2357/go-aiy-voice/aiy/board"
+	"go-aiy-voice/aiy/board"
 )
 
 func main() {
