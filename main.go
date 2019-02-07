@@ -15,7 +15,7 @@ func main() {
 	btn, err := board.NewButton(23, 0.25, func() {
 		fmt.Println("starter set pressed event\n")
 	}, func() {
-		voice.Aplay("~/test6.wav", "default")
+		go voice.Aplay("~/test6.wav", "default")
 	})
 	if err != nil {
 		fmt.Println(err)
