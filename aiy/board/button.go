@@ -60,6 +60,7 @@ func buttonRun(bCh chan buttonCh, button Button) {
 		os.Exit(1)
 	}
 	defer rpio.Close()
+	fmt.Println("button run start")
 
 	for true {
 		channel := <-bCh
@@ -84,11 +85,14 @@ func buttonRun(bCh chan buttonCh, button Button) {
 		}
 	}
 
+	fmt.Println("button run end")
 	close(bCh)
 	rpio.Close()
 }
 
 func doWhenPressed(btn Button) {
+	fmt.Println("doWhenPressed start")
+
 	for true {
 		if x := <-btn.channel; x.done == true {
 			break
@@ -101,10 +105,13 @@ func doWhenPressed(btn Button) {
 		}
 	}
 
+	fmt.Println("doWhenPressed end")
 	close(btn.channel)
 }
 
 func doWhenReleased(btn Button) {
+	fmt.Println("doWhenReleased start")
+
 	for true {
 		if x := <-btn.channel; x.done == true {
 			break
@@ -117,6 +124,7 @@ func doWhenReleased(btn Button) {
 		}
 	}
 
+	fmt.Println("doWhenReleased end")
 	close(btn.channel)
 
 }
@@ -131,4 +139,25 @@ func (btn *Button) SetWhenPressed(f func()) {
 
 func (btn *Button) SetWhenReleased(f func()) {
 	btn.whenReleased = f
+}
+
+func (btn *Button) WaitForPressed() {
+	for {
+		if x <- btn.channel; x.status == Pressed {
+			break
+		}
+
+		time.Sleep(0.5 * time.Second)
+	}
+}
+
+func (btn *Button) WaitForReleased() {
+	for {
+		if x <- btn.channel; x.status == Released {
+			break
+		}
+
+		time.Sleep(0.5 * time.Second)
+	}
+
 }
