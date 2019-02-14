@@ -6,7 +6,7 @@ import (
 	"os/exec"
 )
 
-func arecord() {
+func Arecord() {
 
 }
 
