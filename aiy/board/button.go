@@ -8,6 +8,7 @@ import (
 	"github.com/stianeikeland/go-rpio/v4"
 )
 
+// Button 按鈕
 type Button struct {
 	pin          uint8
 	debounceTime float64
@@ -17,15 +18,19 @@ type Button struct {
 }
 
 type buttonCh struct {
-	done   bool
-	status uint8
+	done         bool
+	status       uint8
+	whenPressed  func()
+	whenReleased func()
 }
 
 const (
+	// Released 放開按鈕狀態常數 0
 	Released uint8 = iota
 	Pressed
 )
 
+// NewButton 新增按鈕監聽物件
 func NewButton(pin uint8, debounceTime float64, whenPressed func(), whenReleased func()) (button Button, err error) {
 	if debounceTime == 0.0 {
 		debounceTime = 0.25
@@ -45,16 +50,12 @@ func NewButton(pin uint8, debounceTime float64, whenPressed func(), whenReleased
 	}
 
 	go buttonRun(button.channel, button)
-	go doWhenPressed(button)
-	go doWhenReleased(button)
 
 	return
 }
 
 func buttonRun(bCh chan buttonCh, button Button) {
-	whenPress := time.Now()
 	pin := rpio.Pin(button.pin)
-	pressed := false
 	if err := rpio.Open(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -63,11 +64,17 @@ func buttonRun(bCh chan buttonCh, button Button) {
 	fmt.Println("button run start")
 
 	var ch buttonCh
-	for true {
+	pressed := false
+	whenPress := time.Now()
+	whp := button.whenPressed
+	whr := button.whenReleased
+
+	loop := true
+	for loop {
 		select {
 		case ch = <-bCh:
-			if ch.done == true {
-				break
+			if ch.done {
+				loop = false
 			}
 		default:
 		}
@@ -77,89 +84,60 @@ func buttonRun(bCh chan buttonCh, button Button) {
 				if !pressed {
 					pressed = true
 					whenPress = time.Now()
+					if ch.whenPressed != nil {
+						whp = ch.whenPressed
+					}
+					go whp()
 					bCh <- buttonCh{status: Pressed}
 				}
 			} else {
 				if pressed {
 					pressed = false
 					whenPress = time.Now()
+					if ch.whenReleased != nil {
+						whr = ch.whenReleased
+					}
+					go whr()
 					bCh <- buttonCh{status: Released}
 				}
 			}
 		}
+
+		if !loop {
+			fmt.Println("close channel")
+			close(bCh)
+		}
 	}
 
 	fmt.Println("button run end")
-	// close(bCh)
 	rpio.Close()
 }
 
-func doWhenPressed(btn Button) {
-	fmt.Println("doWhenPressed start")
-
-	var ch buttonCh
-	for true {
-		select {
-		case ch = <-btn.channel:
-			if ch.done == true {
-				break
-			}
-		default:
-		}
-
-		if ch := <-btn.channel; ch.status == Pressed {
-			whp := btn.whenPressed
-			whp()
-		}
-	}
-
-	fmt.Println("doWhenPressed end")
-	close(btn.channel)
+// Close 關閉按鈕監聽
+func (btn *Button) Close() {
+	btn.channel <- buttonCh{done: true}
 }
 
-func doWhenReleased(btn Button) {
-	fmt.Println("doWhenReleased start")
-
-	var ch buttonCh
-	for true {
-		select {
-		case ch = <-btn.channel:
-			if ch.done == true {
-				break
-			}
-		default:
-		}
-
-		if ch := <-btn.channel; ch.status == Released {
-			whr := btn.whenReleased
-			whr()
-		}
-	}
-
-	fmt.Println("doWhenReleased end")
-	close(btn.channel)
-
-}
-
-func (button *Button) Close() {
-	button.channel <- buttonCh{done: true}
-}
-
+// SetWhenPressed 設定新按鈕按下事件
 func (btn *Button) SetWhenPressed(f func()) {
 	btn.whenPressed = f
+	btn.channel <- buttonCh{whenPressed: f}
 }
 
+// SetWhenReleased 設定新按鈕放開事件
 func (btn *Button) SetWhenReleased(f func()) {
 	btn.whenReleased = f
+	btn.channel <- buttonCh{whenReleased: f}
 }
 
+// WaitForPressed 暫時凍結等待按鈕按下
 func (btn *Button) WaitForPressed() {
 	var ch buttonCh
 	for {
 		select {
 		case ch = <-btn.channel:
 			if ch.status == Pressed {
-				break
+				return
 			}
 		default:
 		}
@@ -168,13 +146,14 @@ func (btn *Button) WaitForPressed() {
 	}
 }
 
+// WaitForReleased 暫時凍結等待按鈕放開
 func (btn *Button) WaitForReleased() {
 	var ch buttonCh
 	for {
 		select {
 		case ch = <-btn.channel:
 			if ch.status == Released {
-				break
+				return
 			}
 		default:
 		}
