@@ -2,15 +2,12 @@ package board
 
 import (
 	"fmt"
-	"os"
 	"time"
-
-	"github.com/stianeikeland/go-rpio/v4"
 )
 
 // Button 按鈕
 type Button struct {
-	pin          uint8
+	listener     listener
 	debounceTime float64
 	channel      chan buttonCh
 	whenPressed  func()
@@ -31,18 +28,14 @@ const (
 )
 
 // NewButton 新增按鈕監聽物件
-func NewButton(pin uint8, debounceTime float64, whenPressed func(), whenReleased func()) (button Button, err error) {
+func NewButton(listener listener, debounceTime float64, whenPressed func(), whenReleased func()) (button Button, err error) {
 	if debounceTime == 0.0 {
 		debounceTime = 0.25
 	}
 
-	if pin == 0 {
-		pin = 23
-	}
-
 	bCh := make(chan buttonCh)
 	button = Button{
-		pin:          pin,
+		listener:     listener,
 		debounceTime: debounceTime,
 		channel:      bCh,
 		whenPressed:  whenPressed,
@@ -55,12 +48,6 @@ func NewButton(pin uint8, debounceTime float64, whenPressed func(), whenReleased
 }
 
 func buttonRun(bCh chan buttonCh, button Button) {
-	pin := rpio.Pin(button.pin)
-	if err := rpio.Open(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer rpio.Close()
 	fmt.Println("button run start")
 
 	var ch buttonCh
@@ -80,7 +67,7 @@ func buttonRun(bCh chan buttonCh, button Button) {
 		}
 
 		if time.Since(whenPress).Seconds() > button.debounceTime {
-			if pin.Read() == rpio.Low {
+			if button.listener.IsTriggered() {
 				if !pressed {
 					pressed = true
 					whenPress = time.Now()
@@ -110,7 +97,7 @@ func buttonRun(bCh chan buttonCh, button Button) {
 	}
 
 	fmt.Println("button run end")
-	rpio.Close()
+	button.listener.End()
 }
 
 // Close 關閉按鈕監聽
