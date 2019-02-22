@@ -1,31 +1,37 @@
 package voice
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
+	"strconv"
 	"time"
+)
+
+const (
+	errorFileType = "File type must be wav raw au voc"
 )
 
 // Recorder , the record
 type Recorder struct {
-	startEvent func()
-	stopEvent  func()
-	doneCh     chan bool
-	options    []string
+	doneCh chan bool
 }
 
 // NewRecorder , create a new Recorder struct
-func NewRecorder(starter func(), ender func(), afmt AudioFormat) (recorder Recorder, err error) {
-	options := produceCmdOptions(afmt)
+func NewRecorder() (recorder Recorder, err error) {
 
 	endSignal := make(chan bool)
 
-	recorder = Recorder{startEvent: starter, stopEvent: ender, doneCh: endSignal, options: options}
+	recorder = Recorder{doneCh: endSignal}
 
 	return
 }
 
-func recordRun(options []string, endSignal chan bool) {
+func recordRun(options []string, endSignal chan bool, onStart func(), onStop func()) {
+	if onStart != nil {
+		onStart()
+	}
+
 	cmd := exec.Command("arecord", options...)
 	if err := cmd.Start(); err != nil {
 		// todo log
@@ -57,28 +63,57 @@ func recordRun(options []string, endSignal chan bool) {
 			close(endSignal)
 		}
 	}
+
+	if onStop != nil {
+		onStop()
+	}
 }
 
-func produceCmdOptions(afmt AudioFormat) (cmdString []string) {
+func produceCmdOptions(afmt AudioFormat, device string, fileType string, fileName string) (cmdString []string, err error) {
+	if !validateFileType(fileType) {
+		err = errors.New(errorFileType)
+		return
+	}
+
+	cmdString = []string{
+		"-q",
+		"-D", device,
+		"-t", fileType,
+		"-c", strconv.FormatInt(afmt.numChannels, 10),
+		"-f", "s" + strconv.FormatInt(afmt.bytesPerSample*8, 10),
+		"-r", strconv.FormatInt(afmt.sampleRate, 10),
+	}
+
+	if fileName != "" {
+		cmdString = append(cmdString, fileName)
+	}
+
 	return
 }
 
-// Start , start recording
-func (recorder *Recorder) Start() {
-	go recordRun(recorder.options, recorder.doneCh)
+func validateFileType(fileType string) bool {
+	for _, supportType := range supportedFileType {
+		if supportType == fileType {
+			return true
+		}
+	}
+
+	return false
 }
 
-// Stop , stop recording
-func (recorder *Recorder) Stop() {
+// Record , start recording
+func (recorder *Recorder) Record(onStart func(), onStop func(), afmt AudioFormat, device string, fileName string) (err error) {
+	options, err := produceCmdOptions(afmt, device, "raw", "")
+	if err != nil {
+		return err
+	}
+
+	go recordRun(options, recorder.doneCh, onStart, onStop)
+
+	return
+}
+
+// Done , stop recording
+func (recorder *Recorder) Done() {
 	recorder.doneCh <- true
-}
-
-// SetStartEvent , set the recorder function triggered at start
-func (recorder *Recorder) SetStartEvent(fc func()) {
-	recorder.startEvent = fc
-}
-
-// SetStopEvent , set the recorder function triggered at stop
-func (recorder *Recorder) SetStopEvent(fc func()) {
-	recorder.stopEvent = fc
 }
