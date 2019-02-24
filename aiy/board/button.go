@@ -127,9 +127,8 @@ func (btn *Button) WaitForPressed() {
 				return
 			}
 		default:
+			continue
 		}
-
-		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -143,8 +142,7 @@ func (btn *Button) WaitForReleased() {
 				return
 			}
 		default:
+			continue
 		}
-
-		time.Sleep(1 * time.Second)
 	}
 }
