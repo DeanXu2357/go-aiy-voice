@@ -46,7 +46,7 @@ func (listener KeyListener) IsTriggered() (result bool) {
 	return
 }
 
-func (listener KeyListener) End() {
+func (listener KeyListener) Close() {
 	//
 	close(listener.scan)
 }

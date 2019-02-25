@@ -97,7 +97,7 @@ func buttonRun(bCh chan buttonCh, button Button) {
 	}
 
 	fmt.Println("button run end")
-	button.listener.End()
+	button.listener.Close()
 }
 
 // Close 關閉按鈕監聽

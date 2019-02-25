@@ -7,27 +7,62 @@ import (
 )
 
 type RpioListener struct {
-	pin rpio.Pin
+	pin  uint8
+	read chan bool
+	done chan bool
 }
 
-func NewRpioListener(pin uint8) (listener listener, err error) {
-	pinAction := rpio.Pin(pin)
-	if err = rpio.Open(); err != nil {
-		fmt.Println(err)
-		// os.Exit(1)
-		return
-	}
-	defer rpio.Close()
+func NewRpioListener(pin uint8) (listener RpioListener, err error) {
 
-	listener = RpioListener{pin: pinAction}
+	ch := make(chan bool)
+	listener = RpioListener{pin: pin, read: ch}
+
+	go rpioRun(listener)
 
 	return
 }
 
-func (listener RpioListener) IsTriggered() bool {
-	return listener.pin.Read() == rpio.Low
+func rpioRun(listener RpioListener) {
+	pinAction := rpio.Pin(listener.pin)
+	if err := rpio.Open(); err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer rpio.Close()
+
+	for true {
+		status := pinAction.Read()
+		var read bool
+		if status == rpio.Low {
+			read = true
+		} else {
+			read = false
+		}
+		listener.read <- read
+
+		select {
+		case done := <-listener.done:
+			if done {
+				close(listener.read)
+				close(listener.done)
+
+				return
+			}
+		default:
+		}
+	}
 }
 
-func (listener RpioListener) End() {
+func (listener RpioListener) IsTriggered() bool {
+	select {
+	case read := <-listener.read:
+		return read
+	default:
+		return false
+	}
+}
+
+func (listener RpioListener) Close() {
+	listener.done <- true
 	rpio.Close()
 }
