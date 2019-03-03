@@ -3,6 +3,7 @@ package voice
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -49,7 +50,7 @@ func Say(param Speacker) (err error) {
 
 	body := fmt.Sprintf("\"<volume level='%d'><pitch level='%d'><speed level='%d'>%s</speed></pitch></volume>\"", param.Volume, param.Pitch, param.Speed, param.Text)
 
-	tmpFile := "tmp.wav"
+	tmpFile := "/tmp/tmp.wav"
 
 	cmd := exec.Command("pico2wave",
 		"--wave="+tmpFile,
@@ -65,6 +66,8 @@ func Say(param Speacker) (err error) {
 	cmd.Stdout = &out
 	err = cmd.Run()
 	if err != nil {
+		fmt.Println(err)
+		os.Exit(3)
 		return err
 	}
 

@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
 	"os"
 
 	porcupine "github.com/charithe/porcupine-go"
@@ -136,7 +135,8 @@ func GetAudioInput(filePath string) (audio io.Reader, err error) {
 	} else {
 		f, err := os.Open(filePath)
 		if err != nil {
-			log.Fatalf("failed to open input [%s]: %+v", filePath, err)
+			fmt.Printf("failed to open input [%s]: %+v\n", filePath, err)
+			os.Exit(2)
 		}
 		defer f.Close()
 

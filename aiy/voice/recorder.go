@@ -1,10 +1,14 @@
 package voice
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -12,9 +16,12 @@ const (
 	errorFileType = "File type must be wav raw au voc"
 )
 
+var wg sync.WaitGroup
+
 // Recorder , the record
 type Recorder struct {
 	doneCh chan bool
+	Output io.Reader
 }
 
 // NewRecorder , create a new Recorder struct
@@ -27,7 +34,19 @@ func NewRecorder() (recorder Recorder, err error) {
 	return
 }
 
-func recordRun(options []string, endSignal chan bool, onStart func(), onStop func()) {
+// Record , start recording
+func (recorder *Recorder) Record(onStart func(), onStop func(), afmt AudioFormat, device string, fileName string) (err error) {
+	options, err := produceCmdOptions(afmt, device, "raw", "")
+	if err != nil {
+		return err
+	}
+
+	go recordRun(options, recorder.doneCh, onStart, onStop, recorder.Output)
+
+	return
+}
+
+func recordRun(options []string, endSignal chan bool, onStart func(), onStop func(), output io.Reader) {
 	if onStart != nil {
 		onStart()
 	}
@@ -35,13 +54,19 @@ func recordRun(options []string, endSignal chan bool, onStart func(), onStop fun
 	cmd := exec.Command("arecord", options...)
 	if err := cmd.Start(); err != nil {
 		// todo log
-		return
+		panic(err)
 	}
+
+	var out bytes.Buffer
+	cmd.Stdout = &out
 
 	done := make(chan error, 1)
 	go func() {
 		done <- cmd.Wait()
 	}()
+
+	output = bufio.NewReader(&out)
+	fmt.Printf("The data is %s\n", out.String())
 
 	select {
 	case <-time.After(3 * time.Second):
@@ -62,6 +87,9 @@ func recordRun(options []string, endSignal chan bool, onStart func(), onStop fun
 			fmt.Println("processkilled by end trigger")
 			close(endSignal)
 		}
+	default:
+		// for {
+		// }
 	}
 
 	if onStop != nil {
@@ -99,18 +127,6 @@ func validateFileType(fileType string) bool {
 	}
 
 	return false
-}
-
-// Record , start recording
-func (recorder *Recorder) Record(onStart func(), onStop func(), afmt AudioFormat, device string, fileName string) (err error) {
-	options, err := produceCmdOptions(afmt, device, "raw", "")
-	if err != nil {
-		return err
-	}
-
-	go recordRun(options, recorder.doneCh, onStart, onStop)
-
-	return
 }
 
 // Done , stop recording
