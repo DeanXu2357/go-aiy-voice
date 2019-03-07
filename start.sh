@@ -1,0 +1,1 @@
+gst-launch-1.0 -v alsasrc ! audioconvert ! audioresample ! audio/x-raw,channels=1,rate=16000,format=S16LE ! filesink location=/dev/stdout |go run main.go
